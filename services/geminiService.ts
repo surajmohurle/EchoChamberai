@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { InputType, GeneratedAssets } from '../types';
+import { GeneratedAssets, InputType } from '../types';
 
 // Utility function to convert a File object to a base64 string
 const fileToGenerativePart = async (file: File) => {
@@ -27,6 +27,28 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 const responseSchema = {
     type: Type.OBJECT,
     properties: {
+        campaignStrategy: {
+            type: Type.OBJECT,
+            description: "High-level marketing strategy derived from the content.",
+            properties: {
+                targetAudience: { type: Type.STRING, description: "A detailed description of the ideal target audience for this content." },
+                brandVoice: { type: Type.STRING, description: "An analysis of the speaker's tone and brand voice (e.g., 'Authoritative & Educational', 'Humorous & Relatable')." },
+                contentPillars: { type: Type.ARRAY, items: { type: Type.STRING }, description: "The 3 main topics or themes discussed that can be used as content pillars." },
+                postingSchedule: { type: Type.STRING, description: "A suggested 3-day posting schedule to maximize engagement." }
+            },
+            required: ["targetAudience", "brandVoice", "contentPillars", "postingSchedule"]
+        },
+        seoStrategy: {
+            type: Type.OBJECT,
+            description: "An SEO and discoverability strategy.",
+            properties: {
+                primaryKeyword: { type: Type.STRING, description: "The single most important keyword for this content." },
+                secondaryKeywords: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of 5-7 related secondary keywords." },
+                suggestedTags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of relevant hashtags or tags for social media and blogs." },
+                metaDescription: { type: Type.STRING, description: "An SEO-optimized meta description (155-160 characters) for the content." }
+            },
+            required: ["primaryKeyword", "secondaryKeywords", "suggestedTags", "metaDescription"]
+        },
         summary: { type: Type.STRING, description: "A comprehensive, well-structured summary or show notes for the content." },
         keyTakeaways: {
             type: Type.ARRAY,
@@ -35,33 +57,35 @@ const responseSchema = {
         },
         videoClips: {
             type: Type.ARRAY,
-            description: "An array of 4 potential short-form video clips if the source is video. Otherwise, this should be an empty array.",
+            description: "An array of 4 potential short-form video clips if the source is video. Otherwise, empty.",
             items: {
                 type: Type.OBJECT,
                 properties: {
                     id: { type: Type.STRING },
                     title: { type: Type.STRING, description: "A catchy, viral-style title for the clip." },
                     hook: { type: Type.STRING, description: "A compelling one-sentence hook for the clip." },
-                    startTime: { type: Type.NUMBER, description: "The start time of the clip in seconds." },
-                    endTime: { type: Type.NUMBER, description: "The end time of the clip in seconds." },
-                    viralityScore: { type: Type.NUMBER, description: "A score from 70-100 indicating the clip's potential to go viral." },
+                    startTime: { type: Type.NUMBER },
+                    endTime: { type: Type.NUMBER },
+                    viralityScore: { type: Type.NUMBER, description: "A score from 70-100 indicating viral potential." },
+                    rationale: { type: Type.STRING, description: "A brief explanation of why this clip was chosen (e.g., 'High emotional energy and a clear, actionable takeaway')." }
                 },
-                required: ["id", "title", "hook", "startTime", "endTime", "viralityScore"]
+                required: ["id", "title", "hook", "startTime", "endTime", "viralityScore", "rationale"]
             }
         },
         audiograms: {
             type: Type.ARRAY,
-            description: "An array of 3 potential audiogram clips if the source is audio. Otherwise, this should be an empty array.",
+            description: "An array of 3 potential audiogram clips if the source is audio. Otherwise, empty.",
             items: {
                 type: Type.OBJECT,
                 properties: {
                     id: { type: Type.STRING },
-                    title: { type: Type.STRING, description: "A catchy title for the audio segment." },
-                    summary: { type: Type.STRING, description: "A short summary of what is discussed in the clip." },
-                    startTime: { type: Type.NUMBER, description: "The start time of the clip in seconds." },
-                    endTime: { type: Type.NUMBER, description: "The end time of the clip in seconds." },
+                    title: { type: Type.STRING },
+                    summary: { type: Type.STRING },
+                    startTime: { type: Type.NUMBER },
+                    endTime: { type: Type.NUMBER },
+                    rationale: { type: Type.STRING, description: "A brief explanation of why this audio segment is engaging." }
                 },
-                required: ["id", "title", "summary", "startTime", "endTime"]
+                required: ["id", "title", "summary", "startTime", "endTime", "rationale"]
             }
         },
         socialPosts: {
@@ -71,41 +95,48 @@ const responseSchema = {
                 properties: {
                     id: { type: Type.STRING },
                     platform: { type: Type.STRING, enum: ["LinkedIn", "X", "Instagram"] },
-                    content: { type: Type.STRING, description: "The social media post content, tailored for the specified platform." },
+                    postType: { type: Type.STRING, description: "The strategic type of post (e.g., 'Hook & Teaser', 'Key Takeaway', 'Discussion Starter', 'Quote Graphic')." },
+                    content: { type: Type.STRING },
+                    visualSuggestion: { type: Type.STRING, description: "A suggestion for the visual element (e.g., 'Use a bold, text-based graphic with the quote')." },
+                    rationale: { type: Type.STRING, description: "The strategic reason for this post's angle and format." }
                 },
-                required: ["id", "platform", "content"]
+                required: ["id", "platform", "postType", "content", "visualSuggestion", "rationale"]
             }
         },
         emailDraft: {
             type: Type.STRING,
-            description: "A promotional email newsletter draft summarizing the content with a clear call-to-action."
+            description: "A promotional email newsletter draft."
         },
         transcript: {
             type: Type.STRING,
-            description: "A full, accurate transcript of the source audio or video. For blog posts, this field should be null."
+            description: "A full transcript. For blog posts, this field should be null."
         }
     },
-    required: ["summary", "keyTakeaways", "videoClips", "audiograms", "socialPosts", "emailDraft"]
+    required: ["campaignStrategy", "seoStrategy", "summary", "keyTakeaways", "videoClips", "audiograms", "socialPosts", "emailDraft"]
 };
 
 
 const getBasePrompt = (inputType: InputType) => `
-You are an expert content strategist and marketer, operating as an AI-powered tool called "Echo Chamber AI". Your task is to atomize a single piece of long-form content into a complete suite of ready-to-publish marketing assets.
+You are 'Echo', an AI Chief Marketing Officer. Your purpose is to perform a deep, strategic analysis of a single piece of long-form content and generate a complete, ready-to-launch marketing campaign. Your output must be a single, valid JSON object that strictly adheres to the provided schema.
 
-Analyze the provided content (${inputType}) and generate a comprehensive JSON object based on the provided schema.
+**Analysis Phase 1: High-Level Strategy**
+First, create the overarching strategy.
+1.  **Campaign Strategy:** Define the target audience based on the content's complexity and subject matter. Analyze the speaker's brand voice. Identify 3 core content pillars that can be expanded upon. Suggest a 3-day posting schedule to maximize reach and engagement.
+2.  **SEO Strategy:** Determine a primary keyword, 5-7 secondary keywords, and a list of relevant tags/hashtags. Write a compelling, SEO-optimized meta description between 155-160 characters.
 
-**Important Instructions:**
-1.  **Summary/Show Notes:** Create a well-structured, SEO-optimized summary.
-2.  **Key Takeaways:** Extract the 5 most impactful points or quotes.
-3.  **Clips (Critical):** You are providing METADATA for a human to edit later. You are NOT generating media files.
-    - If the input is a **video**, identify 4 segments under 60 seconds with high energy and clear takeaways. Assign a unique ID (e.g., "vc1"), a viral title, a hook, timestamps, and a virality score.
-    - If the input is **audio**, identify 3 engaging segments. Assign a unique ID (e.g., "ag1"), a title, a summary, and timestamps for each.
-    - If the input is a **blog post**, both 'videoClips' and 'audiograms' should be empty arrays.
-4.  **Social Posts:** Draft 3 distinct posts, one each for LinkedIn (professional, detailed), X (short, provocative, with hashtags), and Instagram (engaging question, visual-focused). Assign unique IDs (e.g., "sp1").
-5.  **Email Draft:** Compose a promotional email newsletter.
-6.  **Transcript:** Provide a full transcript for audio/video content. If the input is a blog post, this field should be explicitly null.
+**Analysis Phase 2: Asset Generation**
+Next, generate the individual marketing assets based on your strategy.
+1.  **Summary/Show Notes:** Create a well-structured, SEO-optimized summary incorporating keywords from your strategy.
+2.  **Key Takeaways:** Extract the 5 most impactful, quotable moments.
+3.  **Clips (Video/Audio - CRITICAL):** You are generating METADATA for a human editor.
+    - If the input is **video**, identify 4 segments under 60 seconds. Provide a viral title, a hook, timestamps, a virality score, and a **rationale** explaining *why* this moment is impactful (e.g., "This section has high emotional energy and a clear, actionable takeaway").
+    - If the input is **audio**, identify 3 engaging segments. Provide a title, summary, timestamps, and a **rationale**.
+    - If the input is a **blog post**, both 'videoClips' and 'audiograms' must be empty arrays.
+4.  **Social Posts:** Draft 3 distinct posts (LinkedIn, X, Instagram). For each, provide a strategic **postType** (e.g., 'Hook & Teaser', 'Discussion Starter'), a **visualSuggestion**, and a **rationale** explaining the angle. Tailor the content to the platform.
+5.  **Email Draft:** Compose a promotional email newsletter based on the summary and takeaways.
+6.  **Transcript:** Provide a full transcript for audio/video. For blog posts, this field must be explicitly null.
 
-Ensure your entire output is a single, valid JSON object that strictly adheres to the provided schema.
+Analyze the provided content (${inputType}) and generate the complete JSON object now.
 `;
 
 
@@ -134,9 +165,7 @@ export const generateContentAssets = async (inputType: InputType, source: string
 
         const jsonText = response.text;
         const parsedData = JSON.parse(jsonText);
-
-        // Data is returned directly without mock URLs.
-        // The UI will be responsible for explaining how to use this data.
+        
         return { ...parsedData, inputType, source };
     } catch (error) {
         console.error("Error generating content from Gemini API:", error);

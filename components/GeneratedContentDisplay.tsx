@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SocialPost, VideoClip, Audiogram } from '../types';
+import { SocialPost, VideoClip, Audiogram, CampaignStrategy, SeoStrategy } from '../types';
 
 const CopyIcon: React.FC = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -16,6 +16,28 @@ const CheckIcon: React.FC = () => (
 const formatTime = (seconds: number): string => {
     return new Date(seconds * 1000).toISOString().substr(14, 5);
 }
+
+export const Pill: React.FC<{ text: string; className?: string}> = ({text, className}) => (
+    <span className={`inline-block bg-primary/10 text-primary text-xs font-semibold px-2.5 py-1 rounded-full ${className}`}>
+        {text}
+    </span>
+);
+
+
+export const StrategyCard: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+    <div className="bg-surface rounded-lg shadow-md ring-1 ring-border-color/50 p-5 h-full">
+        <div className="flex items-center mb-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3 text-primary">
+                {icon}
+            </div>
+            <h4 className="font-bold text-text-primary text-lg">{title}</h4>
+        </div>
+        <div className="text-sm text-text-secondary space-y-2">
+            {children}
+        </div>
+    </div>
+);
+
 
 export const TextBlock: React.FC<{ content: string, maxHeight?: string }> = ({ content, maxHeight = 'h-full' }) => {
   const [copied, setCopied] = useState(false);
@@ -58,21 +80,47 @@ export const SocialPostDisplay: React.FC<{ post: SocialPost }> = ({ post }) => {
   const { icon, color } = platformStyles[post.platform];
 
   return (
-    <div className="bg-surface p-4 rounded-lg h-full flex flex-col ring-1 ring-border-color/70 shadow-sm transition-all duration-300 hover:shadow-md hover:ring-primary/20">
-        <div className="flex justify-between items-center mb-3">
+    <div className="bg-surface rounded-xl overflow-hidden shadow-lg ring-1 ring-border-color/50 flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:ring-primary/20">
+      {/* Header */}
+      <div className="p-4 bg-slate-50 border-b border-border-color">
+        <div className="flex justify-between items-center">
              <div className={`flex items-center space-x-2 ${color}`}>
                 {icon}
                 <span className="font-bold text-sm text-text-primary">{post.platform}</span>
              </div>
-             <button
-                onClick={handleCopy}
-                className="text-xs font-semibold text-primary hover:underline flex items-center space-x-1 p-1 rounded-md"
-                >
-                {copied ? <CheckIcon/> : <CopyIcon/>}
-                <span className={`transition-all duration-200 ${copied ? 'text-secondary' : 'text-primary'}`}>{copied ? 'Copied!' : 'Copy'}</span>
-            </button>
+             <Pill text={post.postType} className="bg-secondary/10 text-secondary"/>
         </div>
-      <p className="text-text-secondary text-sm flex-grow whitespace-pre-wrap leading-relaxed">{post.content}</p>
+      </div>
+      
+      {/* Content */}
+      <div className="p-4 space-y-4 flex-grow flex flex-col">
+        <p className="text-text-secondary text-sm flex-grow whitespace-pre-wrap leading-relaxed">{post.content}</p>
+
+        <div className="space-y-3 pt-3 border-t border-border-color/70 border-dashed">
+            <div className="flex items-start space-x-2">
+                <div className="w-4 h-4 mt-0.5 text-accent flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l.293.293a1 1 0 001.414-1.414l-3-3z" clipRule="evenodd" /></svg></div>
+                <div>
+                    <p className="text-xs font-semibold text-text-primary">Rationale</p>
+                    <p className="text-xs text-text-secondary">{post.rationale}</p>
+                </div>
+            </div>
+             <div className="flex items-start space-x-2">
+                <div className="w-4 h-4 mt-0.5 text-secondary flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" /></svg></div>
+                <div>
+                    <p className="text-xs font-semibold text-text-primary">Visual Suggestion</p>
+                    <p className="text-xs text-text-secondary">{post.visualSuggestion}</p>
+                </div>
+            </div>
+        </div>
+      </div>
+
+       {/* Footer */}
+       <div className="p-2 bg-slate-50 border-t border-border-color">
+            <button onClick={handleCopy} className="w-full text-center text-sm font-semibold text-primary hover:bg-primary/10 py-2 rounded-md transition-colors flex items-center justify-center space-x-2">
+                {copied ? <CheckIcon/> : <CopyIcon/>}
+                <span>{copied ? 'Copied Content!' : 'Copy Content'}</span>
+            </button>
+       </div>
     </div>
   );
 };
@@ -80,14 +128,14 @@ export const SocialPostDisplay: React.FC<{ post: SocialPost }> = ({ post }) => {
 export const VideoClipDisplay: React.FC<{ clip: VideoClip }> = ({ clip }) => {
   const [copied, setCopied] = useState(false);
   const handleCopy = () => {
-    const textToCopy = `Title: ${clip.title}\nHook: ${clip.hook}\nTimestamp: ${formatTime(clip.startTime)} - ${formatTime(clip.endTime)}`;
+    const textToCopy = `Title: ${clip.title}\nHook: ${clip.hook}\nTimestamp: ${formatTime(clip.startTime)} - ${formatTime(clip.endTime)}\nRationale: ${clip.rationale}`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
   
   return (
-    <div className="bg-surface rounded-lg overflow-hidden shadow-lg ring-1 ring-border-color/50 flex flex-col h-full">
+    <div className="bg-surface rounded-xl overflow-hidden shadow-lg ring-1 ring-border-color/50 flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:ring-primary/20">
       <div className="p-4 bg-slate-100 border-b border-border-color">
         <div className="flex justify-between items-start">
             <h4 className="font-bold text-text-primary pr-2">{clip.title}</h4>
@@ -97,14 +145,15 @@ export const VideoClipDisplay: React.FC<{ clip: VideoClip }> = ({ clip }) => {
             </span>
         </div>
       </div>
-      <div className="p-4 space-y-4 flex-grow flex flex-col">
+      <div className="p-4 space-y-3 flex-grow flex flex-col">
           <p className="text-sm text-text-secondary italic">"{clip.hook}"</p>
-          <div className="flex items-center text-sm text-text-primary bg-slate-100 p-2 rounded-md">
+           <div className="flex items-center text-sm text-text-primary bg-slate-100 p-2 rounded-md">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-primary" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.414-1.415L11 9.586V6z" clipRule="evenodd" /></svg>
               <span className="font-mono">{formatTime(clip.startTime)} - {formatTime(clip.endTime)}</span>
           </div>
-          <div className="text-xs text-text-secondary/80 mt-auto pt-2 border-t border-dashed border-border-color">
-              <strong>How to use:</strong> Cut a clip from your original video using these timestamps in an editor.
+          <div className="text-xs text-text-secondary/80 mt-auto pt-3 border-t border-dashed border-border-color">
+              <p className="font-bold text-text-primary mb-1">AI Rationale:</p>
+              <p>{clip.rationale}</p>
           </div>
       </div>
        <div className="p-2 bg-slate-50">
@@ -120,25 +169,26 @@ export const VideoClipDisplay: React.FC<{ clip: VideoClip }> = ({ clip }) => {
 export const AudiogramDisplay: React.FC<{ audiogram: Audiogram }> = ({ audiogram }) => {
    const [copied, setCopied] = useState(false);
    const handleCopy = () => {
-    const textToCopy = `Title: ${audiogram.title}\nSummary: ${audiogram.summary}\nTimestamp: ${formatTime(audiogram.startTime)} - ${formatTime(audiogram.endTime)}`;
+    const textToCopy = `Title: ${audiogram.title}\nSummary: ${audiogram.summary}\nTimestamp: ${formatTime(audiogram.startTime)} - ${formatTime(audiogram.endTime)}\nRationale: ${audiogram.rationale}`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="bg-surface rounded-lg overflow-hidden shadow-lg ring-1 ring-border-color/50 flex flex-col h-full">
+    <div className="bg-surface rounded-xl overflow-hidden shadow-lg ring-1 ring-border-color/50 flex flex-col h-full transition-all duration-300 hover:shadow-xl hover:ring-primary/20">
         <div className="p-4 bg-slate-100 border-b border-border-color">
             <h4 className="font-bold text-text-primary">{audiogram.title}</h4>
         </div>
-        <div className="p-4 space-y-4 flex-grow flex flex-col">
+        <div className="p-4 space-y-3 flex-grow flex flex-col">
             <p className="text-sm text-text-secondary italic">"{audiogram.summary}"</p>
             <div className="flex items-center text-sm text-text-primary bg-slate-100 p-2 rounded-md">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-accent" viewBox="0 0 20 20" fill="currentColor"><path d="M18 3a1 1 0 00-1.447-.894L4 6.44V17.55a1 1 0 001.447.894l12-6A1 1 0 0018 12V4a1 1 0 000-1z" /></svg>
                 <span className="font-mono">{formatTime(audiogram.startTime)} - {formatTime(audiogram.endTime)}</span>
             </div>
-            <div className="text-xs text-text-secondary/80 mt-auto pt-2 border-t border-dashed border-border-color">
-                <strong>How to use:</strong> Create an audiogram using this clip from your original audio file.
+             <div className="text-xs text-text-secondary/80 mt-auto pt-3 border-t border-dashed border-border-color">
+                <p className="font-bold text-text-primary mb-1">AI Rationale:</p>
+                <p>{audiogram.rationale}</p>
             </div>
         </div>
         <div className="p-2 bg-slate-50">

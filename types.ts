@@ -5,6 +5,21 @@ export enum InputType {
   UNKNOWN = 'Unknown'
 }
 
+export interface CampaignStrategy {
+    targetAudience: string;
+    brandVoice: string;
+    contentPillars: string[];
+    postingSchedule: string;
+}
+
+export interface SeoStrategy {
+    primaryKeyword: string;
+    secondaryKeywords: string[];
+    suggestedTags: string[];
+    metaDescription: string;
+}
+
+
 export interface VideoClip {
   id: string;
   title: string;
@@ -14,12 +29,16 @@ export interface VideoClip {
   viralityScore: number;
   thumbnailUrl: string;
   videoUrl: string;
+  rationale: string;
 }
 
 export interface SocialPost {
   id: string;
   platform: 'LinkedIn' | 'X' | 'Instagram';
+  postType: string;
   content: string;
+  visualSuggestion: string;
+  rationale: string;
 }
 
 export interface Audiogram {
@@ -28,11 +47,14 @@ export interface Audiogram {
   summary: string;
   startTime: number;
   endTime: number;
+  rationale: string;
 }
 
 export interface GeneratedAssets {
   inputType: InputType;
   source: string;
+  campaignStrategy?: CampaignStrategy;
+  seoStrategy?: SeoStrategy;
   summary?: string;
   transcript?: string;
   keyTakeaways?: string[];

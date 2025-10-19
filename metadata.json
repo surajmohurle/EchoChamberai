@@ -1,0 +1,5 @@
+{
+  "name": "Echo Chamber AI",
+  "description": "A Gemini-powered multimodal content repurposing micro-SaaS that atomizes long-form content (videos, podcasts, articles) into a suite of ready-to-publish marketing assets with a single click.",
+  "requestFramePermissions": []
+}
